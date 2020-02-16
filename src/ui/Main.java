@@ -1,6 +1,7 @@
 package ui;
 import java.util.*;
 
+import customExceptions.NoMoreTurnsToCallException;
 import customExceptions.NotEnoughFieldsException;
 import customExceptions.UserDoesNotExistException;
 import customExceptions.UserExistsException;
@@ -23,6 +24,9 @@ public class Main {
 				break;
 			case 2:
 				main.giveTurnMain();
+				break;
+			case 3:
+				main.attendTurnMain();
 				break;
 			case 4:
 				x = false;
@@ -67,6 +71,28 @@ public class Main {
 			System.out.println(uhte.getMessage());
 		} catch (UserDoesNotExistException udnee) {
 			System.out.println(udnee.getMessage());
+		}
+	}
+	
+	public void attendTurnMain() {
+		try {
+			System.out.println(company.attendTurn());
+			System.out.println("1. Attended     2.Left");
+			int option = Integer.parseInt(input.nextLine());
+			switch(option) {
+			case 1:
+				company.setStatusTurn(option);
+				break;
+			case 2:
+				company.setStatusTurn(option);
+				break;
+			default:
+				System.out.println("ERROR! No valid option");
+				break;
+			}
+		}
+		catch (NoMoreTurnsToCallException nmttce) {
+			System.out.println(nmttce.getMessage());
 		}
 	}
 	

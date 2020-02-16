@@ -1,6 +1,7 @@
 package model;
 import java.util.*;
 
+import customExceptions.NoMoreTurnsToCallException;
 import customExceptions.NotEnoughFieldsException;
 import customExceptions.UserDoesNotExistException;
 import customExceptions.UserExistsException;
@@ -30,7 +31,7 @@ public class Company {
 			throw new NotEnoughFieldsException("There are not enough filled up fields");
 		}
 		else if(userExists(id)){
-			throw new UserExistsException(": an user with that ID have already been added", id);
+			throw new UserExistsException(": an user with that ID has already been added", id);
 		}
 		else {
 			users.add(new User(idType, id, name, lastName, phone, address));
@@ -95,8 +96,50 @@ public class Company {
 		}
 	}
 	
-	public void attendTurn() {
-		
+	public String attendTurn() throws NoMoreTurnsToCallException {
+		String msg = "";
+		boolean x = true;
+		for(int i = 0; i < turns.size() && x; i++) {
+			if(turns.get(i).getTurnLetter() == currentTurnLetter && turns.get(i).getTurnNumber() == currentTurnNumber && turns.get(i).isAttended() == false && turns.get(i).isLeft() == false) {
+				msg = "Calling for the turn " + turns.get(i).getTurnLetter() + turns.get(i).getTurnNumber();
+				x = false;
+			}
+		}
+		if(x) {
+			throw new NoMoreTurnsToCallException("There are not turns left to call");
+		}
+		return msg;
+	}
+	
+	public void setStatusTurn(int option) {
+		boolean x = true;
+		for(int i = 0; i < turns.size() && x; i++) {
+			if(turns.get(i).getTurnLetter() == currentTurnLetter && turns.get(i).getTurnNumber() == currentTurnNumber && turns.get(i).isAttended() == false && turns.get(i).isLeft() == false) {
+				x = false;
+				if(option == 1) {
+					turns.get(i).setAttended(true);
+					advanceCurrentTurn();
+				}
+				else if(option == 2) {
+					turns.get(i).setLeft(true);
+					advanceCurrentTurn();
+				}
+			}
+		}
+	}
+	
+	public void advanceCurrentTurn() {
+		if(currentTurnLetter == 'Z' && currentTurnNumber == 99) {
+			currentTurnLetter = 'A';
+			currentTurnNumber = 0;
+		}
+		else if(currentTurnNumber == 99) {
+			currentTurnLetter++;
+			currentTurnNumber = 0;
+		}
+		else {
+			currentTurnNumber++;
+		}
 	}
 	
 	public boolean userExists(String id) {

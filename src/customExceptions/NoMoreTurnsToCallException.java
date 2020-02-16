@@ -1,5 +1,9 @@
 package customExceptions;
 
-public class NoMoreTurnsToCallException {
-
+@SuppressWarnings("serial")
+public class NoMoreTurnsToCallException extends Exception {
+	public NoMoreTurnsToCallException(String message) {
+		super(message);
+	}
+	
 }
