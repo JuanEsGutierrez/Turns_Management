@@ -3,6 +3,7 @@ import java.util.*;
 
 import customExceptions.NoMoreTurnsToCallException;
 import customExceptions.NotEnoughFieldsException;
+import customExceptions.TurnTypeExistsException;
 import customExceptions.UserDoesNotExistException;
 import customExceptions.UserExistsException;
 import customExceptions.UserHasTurnException;
@@ -16,28 +17,56 @@ public class Main {
 		Main main = new Main();
 		boolean x = true;
 		while(x) {
-			System.out.println("MENU \n1. Add user \n2. Register turn \n3. Attend turn \n4. Exit");
+			long start = System.currentTimeMillis();
+			System.out.println("MENU \n1.Show time and date \n2. Add user \n3.Add turn types \n4. Register turn \n5. Attend turn \n6. Exit");
+			System.out.println(main.company.showSoftwareTime());
 			int option = Integer.parseInt(main.input.nextLine());
 			switch(option) {
 			case 1:
-				main.addUserMain();
+				long end = System.currentTimeMillis();
+				long difference = end - start;
+				main.company.updateSoftwareTime(difference);
+				System.out.println(main.company.showSoftwareTime());
 				break;
 			case 2:
-				main.giveTurnMain();
+				main.addUserMain();
 				break;
 			case 3:
-				main.attendTurnMain();
+				main.addTurnTypeMain();
 				break;
 			case 4:
+				main.giveTurnMain();
+				break;
+			case 5:
+				main.attendTurnMain();
+				break;
+			case 6:
 				x = false;
 				break;
 			}
+		long end = System.currentTimeMillis();
+		long difference = end - start;
+		main.company.updateSoftwareTime(difference);
 		}
 	}
 	
 	public Main() {
 		input = new Scanner(System.in);
 		company = new Company();
+	}
+	
+	public void addTurnTypeMain() {
+		System.out.println("Write the name");
+		String name = input.nextLine();
+		System.out.println("Write the duration");
+		float duration = Float.parseFloat(input.nextLine());
+		try {
+			company.addTurnType(name, duration);
+		} catch (NotEnoughFieldsException nefe) {
+			System.out.println(nefe.getMessage());
+		} catch (TurnTypeExistsException ttee) {
+			System.out.println(ttee.getName() + ttee.getMessage());
+		}
 	}
 	
 	public void addUserMain() {

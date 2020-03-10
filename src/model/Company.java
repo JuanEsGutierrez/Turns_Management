@@ -1,8 +1,10 @@
 package model;
+import java.time.*;
 import java.util.*;
 
 import customExceptions.NoMoreTurnsToCallException;
 import customExceptions.NotEnoughFieldsException;
+import customExceptions.TurnTypeExistsException;
 import customExceptions.UserDoesNotExistException;
 import customExceptions.UserExistsException;
 import customExceptions.UserHasTurnException;
@@ -15,16 +17,51 @@ public class Company {
 	
 	private ArrayList<User> users;
 	private ArrayList<Turn> turns;
+	private ArrayList<TurnType> turnTypes;
+	private SoftwareTime softwareTime;
 	
 	public Company() {
 		users = new ArrayList<User>();
 		turns = new ArrayList<Turn>();
+		turnTypes = new ArrayList<TurnType>();
+		softwareTime = new SoftwareTime();
 		currentTurnLetter = 'A';
 		currentTurnNumber = 0;
 		turnLetterToAssign = 'A';
 		turnNumberToAssign = 0;
 	}
 	
+	public String showSoftwareTime() {
+		return "Current time and date: " + softwareTime.getTime() + " " + softwareTime.getDate();
+	}
+	
+	public void updateSoftwareTime(long difference) {
+		difference *= 1000000;
+		softwareTime.setTime(softwareTime.getTime().plusNanos(difference));
+	}
+	
+	public void addTurnType(String name, float duration) throws NotEnoughFieldsException, TurnTypeExistsException {
+		if(name.isBlank() || duration < 0) {
+			throw new NotEnoughFieldsException("There are not enough filled up fields");
+		}
+		else if(turnTypeExists(name)) {
+			throw new TurnTypeExistsException(": a turn type with that name has already been added", name);
+		}
+		else {
+			turnTypes.add(new TurnType(name, duration));
+		}
+	}
+	
+	public boolean turnTypeExists(String name) {
+		boolean exists = false;
+		for(int i = 0; i < turnTypes.size(); i++) {
+			if(turnTypes.get(i).getName().equals(name)) {
+				exists = true;
+			}
+		}
+		return exists;
+	}
+
 	public String addUser(String idType, String id, String name, String lastName, String phone, String address) throws NotEnoughFieldsException, UserExistsException {
 		String msg = "";
 		if(idType.isBlank() || id.isBlank() || name.isBlank() || lastName.isBlank()) {
@@ -151,4 +188,5 @@ public class Company {
 		}
 		return exists;
 	}
+	
 }

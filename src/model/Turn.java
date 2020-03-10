@@ -7,6 +7,7 @@ public class Turn {
 	private boolean left;
 	
 	private User user;
+	private TurnType turnType;
 
 	public Turn(char turnLetter, int turnNumber, User user) {
 		this.turnLetter = turnLetter;
