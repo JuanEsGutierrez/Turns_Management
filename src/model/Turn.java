@@ -9,12 +9,13 @@ public class Turn {
 	private User user;
 	private TurnType turnType;
 
-	public Turn(char turnLetter, int turnNumber, User user) {
+	public Turn(char turnLetter, int turnNumber, User user, TurnType turnType) {
 		this.turnLetter = turnLetter;
 		this.turnNumber = turnNumber;
 		attended = false;
 		left = false;
 		this.user = user;
+		this.turnType = turnType;
 	}
 
 	/**

@@ -3,7 +3,9 @@ import java.util.*;
 
 import customExceptions.NoMoreTurnsToCallException;
 import customExceptions.NotEnoughFieldsException;
+import customExceptions.TurnTypeDoesNotExistException;
 import customExceptions.TurnTypeExistsException;
+import customExceptions.TurnTypesEmptyException;
 import customExceptions.UserDoesNotExistException;
 import customExceptions.UserExistsException;
 import customExceptions.UserHasTurnException;
@@ -57,7 +59,7 @@ public class Main {
 	
 	public void addTurnTypeMain() {
 		System.out.println("Write the name");
-		String name = input.nextLine();
+		String name = input.nextLine().toUpperCase();
 		System.out.println("Write the duration");
 		float duration = Float.parseFloat(input.nextLine());
 		try {
@@ -94,12 +96,19 @@ public class Main {
 	public void giveTurnMain() {
 		System.out.println("Write the ID");
 		String id = input.nextLine().toUpperCase();
+		System.out.println(company.showTurnTypes());
+		System.out.println("Write the turn type name");
+		String name = input.nextLine().toUpperCase();
 		try {
-			System.out.println(company.giveTurn(id));
+			System.out.println(company.giveTurn(id, name));
 		} catch (UserHasTurnException uhte) {
 			System.out.println(uhte.getMessage());
 		} catch (UserDoesNotExistException udnee) {
 			System.out.println(udnee.getMessage());
+		} catch (TurnTypeDoesNotExistException ttdnee) {
+			System.out.println(ttdnee.getMessage());
+		} catch (TurnTypesEmptyException ttee) {
+			System.out.println(ttee.getMessage());
 		}
 	}
 	

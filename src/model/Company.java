@@ -1,10 +1,11 @@
 package model;
-import java.time.*;
 import java.util.*;
 
 import customExceptions.NoMoreTurnsToCallException;
 import customExceptions.NotEnoughFieldsException;
+import customExceptions.TurnTypeDoesNotExistException;
 import customExceptions.TurnTypeExistsException;
+import customExceptions.TurnTypesEmptyException;
 import customExceptions.UserDoesNotExistException;
 import customExceptions.UserExistsException;
 import customExceptions.UserHasTurnException;
@@ -49,6 +50,19 @@ public class Company {
 		}
 		else {
 			turnTypes.add(new TurnType(name, duration));
+			sortTurnTypesByName();
+		}
+	}
+	
+	public void sortTurnTypesByName() {
+		for(int i = 1; i < turnTypes.size(); i++) {
+			TurnType temp = turnTypes.get(i);
+			int j = i - 1;
+			while(j >= 0 && turnTypes.get(j).getName().compareTo(temp.getName()) < 0) {
+				turnTypes.set(j + 1, turnTypes.get(j));
+				j--;
+			}
+			turnTypes.set(j + 1, temp);
 		}
 	}
 	
@@ -77,44 +91,79 @@ public class Company {
 		return msg;
 	}
 	
-	public String giveTurn(String id) throws UserHasTurnException, UserDoesNotExistException {
+	public String giveTurn(String id, String name) throws UserHasTurnException, UserDoesNotExistException, TurnTypesEmptyException, TurnTypeDoesNotExistException {
 		String msg = "";
-		if(turns.isEmpty()) {
-			boolean x = true;
-			for(int i = 0; i < users.size() && x; i++) {
-				if(users.get(i).getId().equals(id)) {
-					turns.add(new Turn(turnLetterToAssign, turnNumberToAssign, users.get(i)));
-					msg = "The turn " + turnLetterToAssign + turnNumberToAssign + " has been assigned to the user:\n" + users.get(i).toString();
-					advanceTurnToAssign();
-					x = false;
-				}
-			}
-			if(x) {
-				throw new UserDoesNotExistException("An user with that ID does not exist");
-			}
+		if(turnTypes.isEmpty()) {
+			throw new TurnTypesEmptyException("There are not turn types created");
 		}
 		else {
-			boolean x = true;
-			for(int i = 0; i < turns.size() && x; i++) {
-				if(turns.get(i).getUser().getId().equals(id) && turns.get(i).isAttended() == false && turns.get(i).isLeft() == false) {
-					x = false;
-					throw new UserHasTurnException("This user has the turn " + turns.get(i).getTurnLetter() + turns.get(i).getTurnNumber() + " registered");
-				}
-			}
-			if(x) {
-				boolean y = true;
-				for(int i = 0; i < users.size() && y; i++) {
+			if(turns.isEmpty()) {
+				boolean x = true;
+				for(int i = 0; i < users.size() && x; i++) {
 					if(users.get(i).getId().equals(id)) {
-						turns.add(new Turn(turnLetterToAssign, turnNumberToAssign, users.get(i)));
+						turns.add(new Turn(turnLetterToAssign, turnNumberToAssign, users.get(i), binarySearchTurnType(name)));
 						msg = "The turn " + turnLetterToAssign + turnNumberToAssign + " has been assigned to the user:\n" + users.get(i).toString();
 						advanceTurnToAssign();
-						y = false;
+						x = false;
 					}
 				}
-				if(y) {
+				if(x) {
 					throw new UserDoesNotExistException("An user with that ID does not exist");
 				}
 			}
+			else {
+				boolean x = true;
+				for(int i = 0; i < turns.size() && x; i++) {
+					if(turns.get(i).getUser().getId().equals(id) && turns.get(i).isAttended() == false && turns.get(i).isLeft() == false) {
+						x = false;
+						throw new UserHasTurnException("This user has the turn " + turns.get(i).getTurnLetter() + turns.get(i).getTurnNumber() + " registered");
+					}
+				}
+				if(x) {
+					boolean y = true;
+					for(int i = 0; i < users.size() && y; i++) {
+						if(users.get(i).getId().equals(id)) {
+							turns.add(new Turn(turnLetterToAssign, turnNumberToAssign, users.get(i), binarySearchTurnType(name)));
+							msg = "The turn " + turnLetterToAssign + turnNumberToAssign + " has been assigned to the user:\n" + users.get(i).toString();
+							advanceTurnToAssign();
+							y = false;
+						}
+					}
+					if(y) {
+						throw new UserDoesNotExistException("An user with that ID does not exist");
+					}
+				}
+			}
+		}
+		return msg;
+	}
+	
+	public TurnType binarySearchTurnType(String name) throws TurnTypeDoesNotExistException {
+		TurnType out = null;
+		int start = 0;
+		int end = turnTypes.size() - 1;
+		while(out == null && start <= end) {
+			int mid = (start + end) / 2;
+			if(turnTypes.get(mid).getName().equals(name)) {
+				out = turnTypes.get(mid);
+			}
+			else if(turnTypes.get(mid).getName().compareTo(name) < 0) {
+				start = mid + 1;
+			}
+			else {
+				end = mid - 1;
+			}
+		}
+		if(out == null) {
+			throw new TurnTypeDoesNotExistException("A turn type with that name does not exist");
+		}
+		return out;
+	}
+	
+	public String showTurnTypes() {
+		String msg = "";
+		for(int i = 0; i < turnTypes.size(); i++) {
+			msg += turnTypes.get(i).toString() + "\n";
 		}
 		return msg;
 	}

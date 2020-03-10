@@ -22,5 +22,10 @@ public class TurnType {
 	public float getDuration() {
 		return duration;
 	}
+
+	@Override
+	public String toString() {
+		return "name: " + name + ", duration: " + duration;
+	}
 	
 }
