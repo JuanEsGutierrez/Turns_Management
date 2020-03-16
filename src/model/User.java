@@ -1,6 +1,9 @@
 package model;
 
-public class User {
+import java.io.Serializable;
+
+@SuppressWarnings("serial")
+public class User implements Comparable<User>, Serializable {
 	private String idType;
 	private String id;
 	private String name;
@@ -69,6 +72,27 @@ public class User {
 	public String toString() {
 		return "(ID type: " + idType + ", ID: " + id + ", name: " + name + ", Last name: " + lastName + ", Phone number: "
 				+ phone + ", Address: " + address + ")";
+	}
+
+	@Override
+	public int compareTo(User u) {
+		if(name.compareToIgnoreCase(u.name) < 0) {
+			return -1;
+		}
+		else if(name.compareToIgnoreCase(u.name) > 0) {
+			return 1;
+		}
+		else {
+			if(lastName.compareToIgnoreCase(u.lastName) < 0) {
+				return -1;
+			}
+			else if(lastName.compareToIgnoreCase(u.lastName) > 0) {
+				return 1;
+			}
+			else {
+				return 0;
+			}
+		}
 	}
 	
 }

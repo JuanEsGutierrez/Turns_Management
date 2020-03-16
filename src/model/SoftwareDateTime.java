@@ -1,13 +1,17 @@
 package model;
 
+import java.io.Serializable;
 import java.time.*;
-public class SoftwareTime {
+@SuppressWarnings("serial")
+public class SoftwareDateTime implements Serializable {
 	private LocalDate date;
 	private LocalTime time;
+	private long difference;
 	
-	public SoftwareTime() {
-		time = LocalTime.now();
+	public SoftwareDateTime() {
 		date = LocalDate.now();
+		time = LocalTime.now();
+		difference = 0;
 	}
 
 	/**
@@ -37,5 +41,19 @@ public class SoftwareTime {
 	public void setTime(LocalTime time) {
 		this.time = time;
 	}
-	
+
+	/**
+	 * @return the difference
+	 */
+	public long getDifference() {
+		return difference;
+	}
+
+	/**
+	 * @param difference the difference to set
+	 */
+	public void setDifference(long difference) {
+		this.difference = difference;
+	}
+
 }

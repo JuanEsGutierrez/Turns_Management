@@ -1,6 +1,11 @@
 package model;
+import java.io.*;
+import java.time.*;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
+import customExceptions.NewDateTimeIsBeforeException;
 import customExceptions.NoMoreTurnsToCallException;
 import customExceptions.NotEnoughFieldsException;
 import customExceptions.TurnTypeDoesNotExistException;
@@ -10,7 +15,10 @@ import customExceptions.UserDoesNotExistException;
 import customExceptions.UserExistsException;
 import customExceptions.UserHasTurnException;
 
-public class Company {
+@SuppressWarnings("serial")
+public class Company implements Serializable {
+	public final static long CHANGING_TURN_SECONDS = 15;
+	
 	private char currentTurnLetter;
 	private int currentTurnNumber;
 	private char turnLetterToAssign;
@@ -19,26 +27,62 @@ public class Company {
 	private ArrayList<User> users;
 	private ArrayList<Turn> turns;
 	private ArrayList<TurnType> turnTypes;
-	private SoftwareTime softwareTime;
+	private SoftwareDateTime softwareDateTime;
 	
 	public Company() {
 		users = new ArrayList<User>();
 		turns = new ArrayList<Turn>();
 		turnTypes = new ArrayList<TurnType>();
-		softwareTime = new SoftwareTime();
+		softwareDateTime = new SoftwareDateTime();
 		currentTurnLetter = 'A';
 		currentTurnNumber = 0;
 		turnLetterToAssign = 'A';
 		turnNumberToAssign = 0;
 	}
 	
-	public String showSoftwareTime() {
-		return "Current time and date: " + softwareTime.getTime() + " " + softwareTime.getDate();
+	/**
+	 * @return the users
+	 */
+	public ArrayList<User> getUsers() {
+		return users;
+	}
+
+	/**
+	 * @return the turns
+	 */
+	public ArrayList<Turn> getTurns() {
+		return turns;
+	}
+
+	/**
+	 * @return the turnTypes
+	 */
+	public ArrayList<TurnType> getTurnTypes() {
+		return turnTypes;
+	}
+
+	public String showSoftwareDateTime() {
+		return "Current date and time: " + softwareDateTime.getDate() + " " + softwareDateTime.getTime();
 	}
 	
-	public void updateSoftwareTime(long difference) {
-		difference *= 1000000;
-		softwareTime.setTime(softwareTime.getTime().plusNanos(difference));
+	public void updateSoftwareDateTime() {
+		long difference = softwareDateTime.getDifference();
+		softwareDateTime.setTime(LocalTime.now().plusSeconds(difference));
+	}
+	
+	public void changeSoftwareDateTime(String date, String time) throws DateTimeParseException, NewDateTimeIsBeforeException, NoMoreTurnsToCallException {
+		LocalDateTime dateTime = LocalDateTime.of(LocalDate.parse(date), LocalTime.parse(time));
+		if(dateTime.toLocalDate().isAfter(softwareDateTime.getDate()) && dateTime.toLocalTime().isAfter(softwareDateTime.getTime())) {
+			LocalTime t1 = dateTime.toLocalTime();
+			LocalTime t2 = softwareDateTime.getTime();
+			softwareDateTime.setDifference(t2.until(t1, ChronoUnit.SECONDS));
+			softwareDateTime.setDate(dateTime.toLocalDate());
+			softwareDateTime.setTime(dateTime.toLocalTime());
+			attendTurn();
+		}
+		else {
+			throw new NewDateTimeIsBeforeException("The new date and time must be after the current one");
+		}
 	}
 	
 	public void addTurnType(String name, float duration) throws NotEnoughFieldsException, TurnTypeExistsException {
@@ -50,15 +94,15 @@ public class Company {
 		}
 		else {
 			turnTypes.add(new TurnType(name, duration));
-			sortTurnTypesByName();
+			insertionSortTurnTypesByName();
 		}
 	}
 	
-	public void sortTurnTypesByName() {
+	public void insertionSortTurnTypesByName() {
 		for(int i = 1; i < turnTypes.size(); i++) {
 			TurnType temp = turnTypes.get(i);
 			int j = i - 1;
-			while(j >= 0 && turnTypes.get(j).getName().compareTo(temp.getName()) < 0) {
+			while(j >= 0 && turnTypes.get(j).getName().compareTo(temp.getName()) > 0) {
 				turnTypes.set(j + 1, turnTypes.get(j));
 				j--;
 			}
@@ -101,7 +145,10 @@ public class Company {
 				boolean x = true;
 				for(int i = 0; i < users.size() && x; i++) {
 					if(users.get(i).getId().equals(id)) {
-						turns.add(new Turn(turnLetterToAssign, turnNumberToAssign, users.get(i), binarySearchTurnType(name)));
+						SoftwareDateTime dateTime = new SoftwareDateTime();
+						dateTime.setDate(softwareDateTime.getDate());
+						dateTime.setTime(softwareDateTime.getTime());
+						turns.add(new Turn(turnLetterToAssign, turnNumberToAssign, users.get(i), binarySearchTurnType(name), dateTime));
 						msg = "The turn " + turnLetterToAssign + turnNumberToAssign + " has been assigned to the user:\n" + users.get(i).toString();
 						advanceTurnToAssign();
 						x = false;
@@ -123,7 +170,10 @@ public class Company {
 					boolean y = true;
 					for(int i = 0; i < users.size() && y; i++) {
 						if(users.get(i).getId().equals(id)) {
-							turns.add(new Turn(turnLetterToAssign, turnNumberToAssign, users.get(i), binarySearchTurnType(name)));
+							SoftwareDateTime dateTime = new SoftwareDateTime();
+							dateTime.setDate(softwareDateTime.getDate());
+							dateTime.setTime(softwareDateTime.getTime());
+							turns.add(new Turn(turnLetterToAssign, turnNumberToAssign, users.get(i), binarySearchTurnType(name), dateTime));
 							msg = "The turn " + turnLetterToAssign + turnNumberToAssign + " has been assigned to the user:\n" + users.get(i).toString();
 							advanceTurnToAssign();
 							y = false;
@@ -185,9 +235,15 @@ public class Company {
 	public String attendTurn() throws NoMoreTurnsToCallException {
 		String msg = "";
 		boolean x = true;
-		for(int i = 0; i < turns.size() && x; i++) {
-			if(turns.get(i).getTurnLetter() == currentTurnLetter && turns.get(i).getTurnNumber() == currentTurnNumber && turns.get(i).isAttended() == false && turns.get(i).isLeft() == false) {
-				msg = "Calling for the turn " + turns.get(i).getTurnLetter() + turns.get(i).getTurnNumber();
+		updateSoftwareDateTime();
+		for(int i = 0; i < turns.size(); i++) {
+			if(turns.get(i).getTurnLetter() == currentTurnLetter && turns.get(i).getTurnNumber() == currentTurnNumber && (turns.get(i).getDateTime().getDate().isBefore(softwareDateTime.getDate()) || turns.get(i).getDateTime().getDate().isEqual(softwareDateTime.getDate())) && turns.get(i).getDateTime().getTime().isBefore(softwareDateTime.getTime()) && turns.get(i).isAttended() == false && turns.get(i).isLeft() == false) {
+				msg += "Calling for the turn " + turns.get(i).getTurnLetter() + turns.get(i).getTurnNumber() + " of type " + turns.get(i).getTurnType().getName()
+						+ " registered at " + turns.get(i).getDateTime().getTime() + "\n";
+				setStatusTurn(turns.get(i));
+				long duration = (long)(turns.get(i).getTurnType().getDuration() * 60);
+				softwareDateTime.setDifference(softwareDateTime.getDifference() + duration + CHANGING_TURN_SECONDS);
+				advanceCurrentTurn();
 				x = false;
 			}
 		}
@@ -197,20 +253,13 @@ public class Company {
 		return msg;
 	}
 	
-	public void setStatusTurn(int option) {
-		boolean x = true;
-		for(int i = 0; i < turns.size() && x; i++) {
-			if(turns.get(i).getTurnLetter() == currentTurnLetter && turns.get(i).getTurnNumber() == currentTurnNumber && turns.get(i).isAttended() == false && turns.get(i).isLeft() == false) {
-				x = false;
-				if(option == 1) {
-					turns.get(i).setAttended(true);
-					advanceCurrentTurn();
-				}
-				else if(option == 2) {
-					turns.get(i).setLeft(true);
-					advanceCurrentTurn();
-				}
-			}
+	public void setStatusTurn(Turn turn) {
+		double option = Math.random();
+		if(option < 0.5) {
+			turn.setAttended(true);
+		}
+		else {
+			turn.setLeft(true);
 		}
 	}
 	
@@ -236,6 +285,97 @@ public class Company {
 			}
 		}
 		return exists;
+	}
+	
+	public String reportUserTurns(String id, int option) throws IOException {
+		String msg = "";
+		for(int i = 0; i < turns.size(); i++) {
+			if(turns.get(i).getUser().getId().equals(id)) {
+				if(turns.get(i).isAttended() == false && turns.get(i).isLeft() == false) {
+					msg += turns.get(i).getTurnLetter() + "" + turns.get(i).getTurnNumber() + " registered at " + turns.get(i).getDateTime().getDate()
+							+ " " + turns.get(i).getDateTime().getTime() + " has not been attended\n";
+				}
+				else if(turns.get(i).isAttended()) {
+					msg += turns.get(i).getTurnLetter() + "" + turns.get(i).getTurnNumber() + " registered at " + turns.get(i).getDateTime().getDate()
+							+ " " + turns.get(i).getDateTime().getTime() + " was attended\n";
+				}
+				else if(turns.get(i).isLeft()) {
+					msg += turns.get(i).getTurnLetter() + "" + turns.get(i).getTurnNumber() + " registered at " + turns.get(i).getDateTime().getDate()
+							+ " " + turns.get(i).getDateTime().getTime() + " the user was called but didn't show up\n";
+				}
+			}
+		}
+		switch(option) {
+		case 1:
+			return msg;
+		case 2:
+			BufferedWriter bw = new BufferedWriter(new FileWriter(new File("data\\ReportUserTurns" + id + ".txt")));
+			bw.write(msg);
+			bw.close();
+			return "File generated in data\\ReportUserTurns" + id + ".txt";
+		default:
+			return "ERROR! No valid option";
+		}
+	}
+	
+	public String bubbleSortUserByNameAndLastName() {
+		if(users.isEmpty() == false) {
+			for(int i = 0; i < users.size() - 1; i++) {
+				for(int j = 0; j < users.size() - i - 1; j++) {
+					if(users.get(j).compareTo(users.get(j + 1)) > 0) {
+						User temp = users.get(j);
+						users.set(j, users.get(j + 1));
+						users.set(j + 1, temp);
+					}
+				}
+			}
+			String msg = "";
+			for(int i = 0; i < users.size(); i++) {
+				msg += users.get(i).toString() + "\n";
+			}
+			return msg;
+		}
+		else {
+			return "There are not users created";
+		}
+	}
+	
+	public String selectionSortUsersById() {
+		if(users.isEmpty() == false) {
+			for(int i = 0; i < users.size() - 1; i++) {
+				int min = i;
+				for(int j = i + 1; j < users.size(); j++) {
+					if(users.get(j).getId().compareTo(users.get(min).getId()) < 0) {
+						min = j;
+					}
+				}
+				User temp = users.get(min);
+				users.set(min, users.get(i));
+				users.set(i, temp);
+			}
+			String msg = "";
+			for(int i = 0; i < users.size(); i++) {
+				msg += users.get(i).toString() + "\n";
+			}
+			return msg;
+		}
+		else {
+			return "There are not users created";
+		}
+	}
+	
+	public String saveProgram(Company company) throws FileNotFoundException, IOException {
+		ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("data\\saved.comp"));
+		oos.writeObject(company);
+		oos.close();
+		return "Data saved in data\\saved.comp";
+	}
+	
+	public Company loadProgram() throws FileNotFoundException, IOException, ClassNotFoundException {
+		ObjectInputStream ois = new ObjectInputStream(new FileInputStream("data\\saved.comp"));
+		Company company = (Company)ois.readObject();
+		ois.close();
+		return company;
 	}
 	
 }

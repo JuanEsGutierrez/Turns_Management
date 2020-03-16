@@ -1,6 +1,9 @@
 package model;
 
-public class Turn {
+import java.io.Serializable;
+
+@SuppressWarnings("serial")
+public class Turn implements Serializable {
 	private char turnLetter;
 	private int turnNumber;
 	private boolean attended;
@@ -8,14 +11,16 @@ public class Turn {
 	
 	private User user;
 	private TurnType turnType;
+	private SoftwareDateTime dateTime;
 
-	public Turn(char turnLetter, int turnNumber, User user, TurnType turnType) {
+	public Turn(char turnLetter, int turnNumber, User user, TurnType turnType, SoftwareDateTime dateTime) {
 		this.turnLetter = turnLetter;
 		this.turnNumber = turnNumber;
 		attended = false;
 		left = false;
 		this.user = user;
 		this.turnType = turnType;
+		this.dateTime = dateTime;
 	}
 
 	/**
@@ -79,6 +84,20 @@ public class Turn {
 	 */
 	public void setLeft(boolean left) {
 		this.left = left;
+	}
+
+	/**
+	 * @return the turnType
+	 */
+	public TurnType getTurnType() {
+		return turnType;
+	}
+
+	/**
+	 * @return the dateTime
+	 */
+	public SoftwareDateTime getDateTime() {
+		return dateTime;
 	}
 	
 }

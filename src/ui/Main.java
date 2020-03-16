@@ -1,6 +1,10 @@
 package ui;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 
+import customExceptions.NewDateTimeIsBeforeException;
 import customExceptions.NoMoreTurnsToCallException;
 import customExceptions.NotEnoughFieldsException;
 import customExceptions.TurnTypeDoesNotExistException;
@@ -19,42 +23,73 @@ public class Main {
 		Main main = new Main();
 		boolean x = true;
 		while(x) {
-			long start = System.currentTimeMillis();
-			System.out.println("MENU \n1.Show time and date \n2. Add user \n3.Add turn types \n4. Register turn \n5. Attend turn \n6. Exit");
-			System.out.println(main.company.showSoftwareTime());
+			System.out.println("MENU \n1. Change date and time \n2. Show time and date \n3. Add user \n4. Add turn types");
+			System.out.println("5. Register turn \n6. Attend turn \n7. Generate report of turns that an user has registered"
+			+ "\n8. Sort users by name and last name \n9. Sort users by ID \n10. Save program \n11. Load program \n12. Exit");
+			main.company.updateSoftwareDateTime();
+			System.out.println(main.company.showSoftwareDateTime());
 			int option = Integer.parseInt(main.input.nextLine());
 			switch(option) {
 			case 1:
-				long end = System.currentTimeMillis();
-				long difference = end - start;
-				main.company.updateSoftwareTime(difference);
-				System.out.println(main.company.showSoftwareTime());
+				main.changeSoftwareDateTimeMain();
 				break;
 			case 2:
-				main.addUserMain();
+				main.company.updateSoftwareDateTime();
+				System.out.println(main.company.showSoftwareDateTime());
 				break;
 			case 3:
-				main.addTurnTypeMain();
+				main.addUserMain();
 				break;
 			case 4:
-				main.giveTurnMain();
+				main.addTurnTypeMain();
 				break;
 			case 5:
-				main.attendTurnMain();
+				main.giveTurnMain();
 				break;
 			case 6:
+				main.attendTurnMain();
+				break;
+			case 7:
+				main.reportUserTurnsMain();
+				break;
+			case 8:
+				System.out.println(main.company.bubbleSortUserByNameAndLastName());
+				break;
+			case 9:
+				System.out.println(main.company.selectionSortUsersById());
+				break;
+			case 10:
+				main.saveProgramMain();
+				break;
+			case 11:
+				main.loadProgramMain();
+				break;
+			case 12:
 				x = false;
 				break;
 			}
-		long end = System.currentTimeMillis();
-		long difference = end - start;
-		main.company.updateSoftwareTime(difference);
 		}
 	}
 	
 	public Main() {
 		input = new Scanner(System.in);
 		company = new Company();
+	}
+	
+	public void changeSoftwareDateTimeMain() {
+		System.out.println("Write the date using the format YYYY-MM-DD");
+		String date = input.nextLine();
+		System.out.println("Write the time using the format HH:MM");
+		String time = input.nextLine();
+		try {
+			company.changeSoftwareDateTime(date, time);
+		} catch (DateTimeParseException dtpe) {
+			System.out.println(dtpe.getMessage());
+		} catch (NewDateTimeIsBeforeException ndtibe) {
+			System.out.println(ndtibe.getMessage());
+		} catch (NoMoreTurnsToCallException nmttce) {
+			System.out.println(nmttce.getMessage());
+		}
 	}
 	
 	public void addTurnTypeMain() {
@@ -94,6 +129,7 @@ public class Main {
 	}
 	
 	public void giveTurnMain() {
+		company.updateSoftwareDateTime();
 		System.out.println("Write the ID");
 		String id = input.nextLine().toUpperCase();
 		System.out.println(company.showTurnTypes());
@@ -115,22 +151,44 @@ public class Main {
 	public void attendTurnMain() {
 		try {
 			System.out.println(company.attendTurn());
-			System.out.println("1. Attended     2.Left");
-			int option = Integer.parseInt(input.nextLine());
-			switch(option) {
-			case 1:
-				company.setStatusTurn(option);
-				break;
-			case 2:
-				company.setStatusTurn(option);
-				break;
-			default:
-				System.out.println("ERROR! No valid option");
-				break;
-			}
 		}
 		catch (NoMoreTurnsToCallException nmttce) {
 			System.out.println(nmttce.getMessage());
+		}
+	}
+	
+	public void reportUserTurnsMain() {
+		System.out.println("Write the ID");
+		String id = input.nextLine().toUpperCase();
+		System.out.println("1. Show report on console \n2. Show report on text archive");
+		int option = Integer.parseInt(input.nextLine());
+		try {
+			System.out.println(company.reportUserTurns(id, option));
+		} catch (IOException ioe) {
+			System.out.println(ioe.getMessage());
+		}
+	}
+	
+	public void saveProgramMain() {
+		try {
+			System.out.println(company.saveProgram(company));
+		} catch (FileNotFoundException fnfe) {
+			System.out.println(fnfe.getMessage());
+		} catch (IOException ioe) {
+			System.out.println(ioe.getMessage());
+		}
+	}
+	
+	public void loadProgramMain() {
+		try {
+			company = company.loadProgram();
+			System.out.println("Program loaded");
+		} catch (FileNotFoundException fnfe) {
+			System.out.println(fnfe.getMessage());
+		} catch (ClassNotFoundException cnfe) {
+			System.out.println(cnfe.getMessage());
+		} catch (IOException ioe) {
+			System.out.println(ioe.getMessage());
 		}
 	}
 	
